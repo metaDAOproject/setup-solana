@@ -1,0 +1,26 @@
+name: 'Setup Solana'
+description: 'Install the Solana Tool Suite.'
+branding:
+  icon: cpu
+  color: purple
+inputs:
+  solana-cli-version:
+    description: 'Version of Solana CLI to use'
+    required: false
+    default: '1.15.2' # stable
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache Solana CLI tools
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/solana/
+          ~/.local/share/solana/
+        key: solana-cli-${{ runner.os }}-build-${{ inputs.solana-cli-version }}
+    - name: Install Solana CLI tools
+      run: sh -c "$(curl -sSfL https://release.solana.com/v${{ inputs.solana-cli-version }}/install)"
+      shell: bash
+    - name: Update PATH
+      run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH 
+      shell: bash
