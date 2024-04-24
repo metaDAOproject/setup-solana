@@ -19,7 +19,12 @@ runs:
           ~/.local/share/solana/
         key: solana-cli-${{ runner.os }}-build-${{ inputs.solana-cli-version }}
     - name: Install Solana CLI tools
-      run: sh -c "$(curl -sSfL https://release.solana.com/v${{ inputs.solana-cli-version }}/install)"
+      run: |
+        if [[ "${{ inputs.solana-cli-version }}" =~ ^[a-zA-Z] ]]; then
+          sh -c "$(curl -sSfL https://release.solana.com/${{ inputs.solana-cli-version }}/install)"
+        else
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ inputs.solana-cli-version }}/install)"
+        fi
       shell: bash
     - name: Update PATH
       run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH 
