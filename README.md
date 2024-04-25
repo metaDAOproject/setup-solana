@@ -1,6 +1,8 @@
-# Setup Anchor
+# Setup Solana
 
 An optimized action for installing the [Solana Tool Suite](https://docs.solana.com/cli/install-solana-cli-tools).
+
+If you use Anchor, you should also check out [Setup Anchor](https://github.com/metaDAOproject/setup-anchor).
 
 # Usage
 
