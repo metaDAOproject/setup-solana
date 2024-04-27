@@ -25,6 +25,9 @@ runs:
               echo "install_version=edge" >> $GITHUB_OUTPUT
             elif [[ ${{ inputs.solana-cli-version }} == "stable" ]]; then
               echo "install_version=$STABLE_CHANNEL_LATEST_TAG" >> $GITHUB_OUTPUT
+              echo "$STABLE_CHANNEL_LATEST_TAG"
+              echo "stable"
+              echo "$install_version"
               echo "Using Solana CLI stable channel $install_version"
             elif [[ ${{ inputs.solana-cli-version }} == "beta" ]]; then
               echo "Using Solana CLI beta channel"
