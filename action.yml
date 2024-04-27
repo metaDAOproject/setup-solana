@@ -15,7 +15,7 @@ runs:
       id: solana-release
       run: |
         chmod +x scripts/channel-info.sh
-        output=$("sh scripts/channel-info.sh")
+        output=$("scripts/channel-info.sh")
         read -r BETA_CHANNEL_LATEST_TAG STABLE_CHANNEL_LATEST_TAG <<< "$output"
 
         if [[ "${{ inputs.solana-cli-version }}" =~ ^[a-zA-Z] ]]; then
@@ -24,8 +24,8 @@ runs:
               echo "Using Solana CLI edge channel"
               echo "install_version=edge" >> $GITHUB_OUTPUT
             elif [[ ${{ inputs.solana-cli-version }} == "stable" ]]; then
-              echo "Using Solana CLI stable channel $STABLE_CHANNEL_LATEST_TAG"
               echo "install_version=$STABLE_CHANNEL_LATEST_TAG" >> $GITHUB_OUTPUT
+              echo "Using Solana CLI stable channel $install_version"
             elif [[ ${{ inputs.solana-cli-version }} == "beta" ]]; then
               echo "Using Solana CLI beta channel"
               echo "install_version=$BETA_CHANNEL_LATEST_TAG" >> $GITHUB_OUTPUT
