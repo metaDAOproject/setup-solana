@@ -9,6 +9,8 @@ jobs:
       - name: Setup Solana
         id: foo
         uses: heyAyushh/setup-solana@v3.6
+        with:
+          solana-cli-version: 'edge'
       - name: check solana version
         run: solana -V
         shell: bash

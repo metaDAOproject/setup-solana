@@ -7,7 +7,7 @@ inputs:
   solana-cli-version:
     description: 'Version of Solana CLI to use'
     required: false
-    default: '1.17.25'
+    default: 'stable'
 runs:
   using: 'composite'
   steps:
