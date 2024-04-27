@@ -1,0 +1,14 @@
+on: [push]
+
+jobs:
+  hello_world_job:
+    runs-on: ubuntu-latest
+    name: A job to say hello
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Solana
+        id: foo
+        uses: heyAyushh/setup-solana@v3
+      - name: check solana version
+        run: solana -V
+        shell: bash

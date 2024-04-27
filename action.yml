@@ -14,13 +14,9 @@ runs:
     - name: Determine Solana CLI version
       id: solana-release
       run: |
-        # Execute channel-info.sh and capture its output
         output=$("./scripts/channel-info.sh")
-
-        # Split the output into separate variables
         read -r BETA_CHANNEL_LATEST_TAG STABLE_CHANNEL_LATEST_TAG <<< "$output"
 
-        # Check if the input is a channel or a version
         if [[ "${{ inputs.solana-cli-version }}" =~ ^[a-zA-Z] ]]; then
           if [[ ${{ inputs.solana-cli-version }} =~ ^(edge|stable|beta)$ ]]; then
             if [[ ${{ inputs.solana-cli-version }} == "edge" ]]; then
