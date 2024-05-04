@@ -11,11 +11,16 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Checkout version script
+      uses: actions/checkout@v4
+      with:
+        repository: metaDAOproject/setup-solana
+        path: .ci
     - name: Determine Solana CLI version
       id: solana-release
       run: |
         chmod +x scripts/channel-info.sh
-        output=$("scripts/channel-info.sh")
+        output=$(".ci/scripts/channel-info.sh")
         read -r BETA_CHANNEL_LATEST_TAG STABLE_CHANNEL_LATEST_TAG <<< "$output"
 
         if [[ "${{ inputs.solana-cli-version }}" =~ ^[a-zA-Z] ]]; then
