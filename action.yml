@@ -45,7 +45,8 @@ runs:
         fi
       shell: bash
     - name: Cache Solana CLI tools
-      uses: actions/cache@v3
+      id: cache-solana
+      uses: actions/cache@v4
       if: steps.solana-release.outputs.install_version != 'edge'
       with:
         path: |
@@ -53,6 +54,7 @@ runs:
           ~/.local/share/solana/
         key: solana-cli-${{ runner.os }}-build-${{ steps.solana-release.outputs.install_version }}
     - name: Install Solana CLI tools
+      if: steps.cache-solana.outputs.cache-hit != 'true'
       run: |
         sh -c "$(curl -sSfL https://release.solana.com/${{ steps.solana-release.outputs.install_version }}/install)"
       shell: bash
