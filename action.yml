@@ -11,46 +11,99 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Checkout version script
+      uses: actions/checkout@v4
+      with:
+        repository: heyAyushh/setup-solana
+        path: .ci
+
     - name: Determine Solana CLI version
       id: solana-release
       run: |
-        chmod +x scripts/channel-info.sh
-        output=$("scripts/channel-info.sh")
+        chmod +x .ci/scripts/channel-info.sh
+        output=$(".ci/scripts/channel-info.sh")
         read -r BETA_CHANNEL_LATEST_TAG STABLE_CHANNEL_LATEST_TAG <<< "$output"
-
-        if [[ "${{ inputs.solana-cli-version }}" =~ ^[a-zA-Z] ]]; then
-          if [[ ${{ inputs.solana-cli-version }} =~ ^(edge|stable|beta)$ ]]; then
-            if [[ ${{ inputs.solana-cli-version }} == "edge" ]]; then
-              echo "Using Solana CLI edge channel"
-              echo "install_version=edge" >> $GITHUB_OUTPUT
-            elif [[ ${{ inputs.solana-cli-version }} == "stable" ]]; then
-              echo "Using Solana CLI stable channel $install_version"
-              echo "install_version=$STABLE_CHANNEL_LATEST_TAG" >> $GITHUB_OUTPUT
-            elif [[ ${{ inputs.solana-cli-version }} == "beta" ]]; then
-              echo "Using Solana CLI beta channel"
-              echo "install_version=$BETA_CHANNEL_LATEST_TAG" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "Invalid Solana CLI channel: ${{ inputs.solana-cli-version }}"
-            exit 1
-          fi
-        else
-          echo "Using Solana CLI ${{ inputs.solana-cli-version }}"
-          echo "install_version=v${{ inputs.solana-cli-version }}" >> $GITHUB_OUTPUT
+        
+        VERSION="${{ inputs.solana-cli-version }}"
+        if [[ "$VERSION" == "stable" ]]; then
+          # Extract version number from STABLE_CHANNEL_LATEST_TAG (remove 'v' prefix)
+          VERSION="${STABLE_CHANNEL_LATEST_TAG#v}"
+          echo "Using stable version: $VERSION"
+        elif [[ "$VERSION" == "beta" ]]; then
+          # Extract version number from BETA_CHANNEL_LATEST_TAG (remove 'v' prefix)
+          VERSION="${BETA_CHANNEL_LATEST_TAG#v}"
+          echo "Using stable version: $VERSION"
         fi
+        
+        echo "Using Solana CLI version $VERSION"
+        echo "install_version=v$VERSION" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        # Use year and week number for cache key
+        echo "cache_key=solana-${{ runner.os }}-v$VERSION-$(date +%Y%V)" >> $GITHUB_OUTPUT
       shell: bash
-    - name: Cache Solana CLI tools
-      uses: actions/cache@v3
+    
+    - name: Set up Solana environment Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+        build-essential \
+        pkg-config \
+        libudev-dev llvm libclang-dev \
+        protobuf-compiler libssl-dev
+      shell: bash
+      
+    # Clean existing installations to prevent version conflicts
+    - name: Clean existing Solana installation
+      run: |
+        rm -rf ~/.cache/solana
+        rm -rf ~/.local/share/solana
+        rm -rf ~/.solana
+        rm -rf ~/.config/solana
+        rm -rf ~/.cargo/bin/cargo-build-sbf
+        rm -rf ~/.cargo/bin/cargo-test-sbf
+      shell: bash
+
+    # Cache Solana CLI tools with version-specific key
+    - name: Cache Solana environment
+      id: cache-solana
+      uses: actions/cache@v4
       if: steps.solana-release.outputs.install_version != 'edge'
       with:
         path: |
           ~/.cache/solana/
           ~/.local/share/solana/
-        key: solana-cli-${{ runner.os }}-build-${{ steps.solana-release.outputs.install_version }}
+          ~/.solana/
+          ~/.cargo/bin/cargo-build-sbf
+          ~/.cargo/bin/cargo-test-sbf
+        key: ${{ steps.solana-release.outputs.cache_key }}
+
     - name: Install Solana CLI tools
+      if: steps.cache-solana.outputs.cache-hit != 'true'
       run: |
-        sh -c "$(curl -sSfL https://release.solana.com/${{ steps.solana-release.outputs.install_version }}/install)"
+        sh -c "$(curl -sSfL https://release.anza.xyz/${{ steps.solana-release.outputs.install_version }}/install)"
       shell: bash
-    - name: Update PATH
-      run: echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+    - name: Verify Solana version
+      run: |
+        echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+        export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
+        
+        # Verify the installed version
+        INSTALLED_VERSION=$(solana --version | grep -oP 'solana-cli \K[0-9]+\.[0-9]+\.[0-9]+')
+        EXPECTED_VERSION="${{ steps.solana-release.outputs.version }}"
+        
+        echo "Installed version: $INSTALLED_VERSION"
+        echo "Expected version: $EXPECTED_VERSION"
+        
+        if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION" ]]; then
+          echo "Version mismatch! Expected $EXPECTED_VERSION but got $INSTALLED_VERSION"
+          # Clean cache and reinstall if version is wrong
+          rm -rf ~/.cache/solana
+          rm -rf ~/.local/share/solana
+          sh -c "$(curl -sSfL https://release.anza.xyz/v$EXPECTED_VERSION/install)"
+        fi
+        
+        echo "Final Solana version:"
+        solana --version
+        cargo-build-sbf --version
       shell: bash
